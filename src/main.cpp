@@ -1,4 +1,4 @@
-#define DEBUG       1
+#define DEBUG       0
 
 #define TRAY1       33
 #define TRAY2       25
@@ -16,7 +16,7 @@
 
 #define IR_SENSOR   32
 
-#define DISPENCE_TIMEOUT  6000
+#define DISPENCE_TIMEOUT  20000
 
 #define SENSOR_DETECT  digitalRead(IR_SENSOR) == 1
 
@@ -68,11 +68,11 @@ void haltDispence(){
 }
 
 void checkSensor(){
-  if (disActive && SENSOR_DETECT){ haltDispence(); }
+  if (disActive && SENSOR_DETECT){ Serial2.println("%Z#"); haltDispence(); }
 }
 
 void checkDispenceTimeout(){
-  if (disActive && millis() - disUpdateMillis > DISPENCE_TIMEOUT){ haltDispence(); }
+  if (disActive && millis() - disUpdateMillis > DISPENCE_TIMEOUT){ Serial.println(); Serial.println("*ERROR#");  Serial2.println("%Z#"); haltDispence(); }
 }
 
 void dispence(uint8_t tray, uint8_t slot){
@@ -80,6 +80,33 @@ void dispence(uint8_t tray, uint8_t slot){
   digitalWrite(slotPins[slot], LOW);
   disActive = true;
   disUpdateMillis = millis();
+}
+
+
+void checkData (String data){
+  if (data == "A1"){ dispence(0, 0); dispence(0, 1);  } 
+  else if (data == "A2"){ dispence(0, 2); dispence(0, 3); }
+  else if (data == "A3"){ dispence(0, 4); dispence(0, 5); } 
+  else if (data == "B1"){ dispence(1, 0); } 
+  else if (data == "B2"){ dispence(1, 1); } 
+  else if (data == "B3"){ dispence(1, 2); } 
+  else if (data == "B4"){ dispence(1, 3); } 
+  else if (data == "B5"){ dispence(1, 4); } 
+  else if (data == "B6"){ dispence(1, 5); } 
+  else if (data == "C1"){ dispence(2, 0); dispence(2, 1); } 
+  else if (data == "C2"){ dispence(2, 2); } 
+  else if (data == "C3"){ dispence(2, 3); }
+  else if (data == "C4"){ dispence(2, 4); } 
+  else if (data == "C5"){ dispence(2, 5); } 
+  else if (data == "D1"){ dispence(3, 0); } 
+  else if (data == "D2"){ dispence(3, 1); } 
+  else if (data == "D3"){ dispence(3, 2); dispence(3, 3); }
+  else if (data == "D4"){ dispence(3, 4); } 
+  else if (data == "D5"){ dispence(3, 5); } 
+  else if (data == "E1"){ dispence(5, 0); dispence(5, 1);} 
+  else if (data == "E2"){ dispence(5, 2); dispence(5, 3); } 
+  else if (data == "E3"){ dispence(5, 4); } 
+  else if (data == "E4"){ dispence(5, 5); }
 }
 
 void processData(String data){
@@ -91,13 +118,25 @@ void processData(String data){
   }
 }
 
-void processSerial2Data(String data){
+void processBTData(String data){
   if (data.startsWith("*") && data.endsWith("#")){
     char trayChar = data.charAt(1);
     uint8_t tray = trayChar - 'A';                // Convert 'A' to 0, 'B' to 1, etc.
     uint8_t slot = data.substring(2).toInt() - 1; // Convert '1' to 0, '2' to 1, etc.
+    SerialBT.println("Tray: "+ String(tray) + " Slot: " + String(slot));
     dispence(tray, slot);
-    if (DEBUG){ Serial.println("Dispencing Tray: " + String(tray) + " Slot: " + String(slot)); }
+  } else if (data.startsWith("%") && data.endsWith("#")){
+    if (data.substring(1) == "Z"){ haltDispence(); }
+  }
+}
+
+void processSerial2Data(String data){
+  if (data == "$X#"){ Serial.println(); Serial.println("*SUCCESS#"); }
+  if (data == "*ERROR#"){ Serial.println(); Serial.println("*ERROR#");  } 
+  else if (data.startsWith("*") && data.endsWith("#")){
+    String disData = data.substring(1, data.length() - 1);
+    if (DEBUG){ Serial.println("Dispencing: " + disData); }
+    checkData(disData);
   } else if (data.startsWith("%") && data.endsWith("#")){
     if (data.substring(1) == "Z"){ haltDispence(); }
   }
@@ -105,8 +144,10 @@ void processSerial2Data(String data){
 
 void readSerial2(){
   if (Serial2.available()){
-    char incoming = Serial2.read();
+    String incoming = Serial2.readStringUntil('\n');
+    incoming.trim();
     if (DEBUG){ Serial.print("Serial2: "); Serial.println(incoming); }
+    processSerial2Data(incoming);
   }
 }
 
@@ -114,8 +155,8 @@ void readSerialBT(){
   if (SerialBT.available()){
     String incoming = SerialBT.readStringUntil('\n');
     incoming.trim();
-    processData(incoming);
     if (DEBUG){ Serial.print("SerialBT: "); Serial.println(incoming); }
+    processBTData(incoming);
   }
 }
 
@@ -139,6 +180,7 @@ void io_init(){
   }
 }
 
+
 void setup() {
   io_init();
   Serial.begin(9600);
@@ -155,4 +197,5 @@ void loop() {
   checkSensor();
   checkDispenceTimeout();
   // debugSensorPin();
+  // testSerial2();
 }
