@@ -17,6 +17,7 @@
 #define IR_SENSOR   32
 
 #define DISPENCE_TIMEOUT  20000
+#define MIN_TIMEOUT       900
 
 #define SENSOR_DETECT  digitalRead(IR_SENSOR) == 1
 
@@ -68,7 +69,8 @@ void haltDispence(){
 }
 
 void checkSensor(){
-  if (disActive && SENSOR_DETECT){ Serial2.println("%Z#"); haltDispence(); }
+  // if (disActive && SENSOR_DETECT && millis() - disUpdateMillis < MIN_TIMEOUT ){ Serial.println(); }
+  if (disActive && SENSOR_DETECT && millis() - disUpdateMillis > MIN_TIMEOUT ){ Serial2.println("%Z#"); haltDispence(); }
 }
 
 void checkDispenceTimeout(){
@@ -87,26 +89,25 @@ void checkData (String data){
   if (data == "A1"){ dispence(0, 0); dispence(0, 1);  } 
   else if (data == "A2"){ dispence(0, 2); dispence(0, 3); }
   else if (data == "A3"){ dispence(0, 4); dispence(0, 5); } 
-  else if (data == "B1"){ dispence(1, 0); } 
-  else if (data == "B2"){ dispence(1, 1); } 
-  else if (data == "B3"){ dispence(1, 2); } 
-  else if (data == "B4"){ dispence(1, 3); } 
-  else if (data == "B5"){ dispence(1, 4); } 
-  else if (data == "B6"){ dispence(1, 5); } 
-  else if (data == "C1"){ dispence(2, 0); dispence(2, 1); } 
-  else if (data == "C2"){ dispence(2, 2); } 
-  else if (data == "C3"){ dispence(2, 3); }
+  else if (data == "B1"){ dispence(1, 0); dispence(1, 1); } 
+  else if (data == "B2"){ dispence(1, 2); } 
+  else if (data == "B3"){ dispence(1, 3); } 
+  else if (data == "B4"){ dispence(1, 4); dispence(1, 5); } 
+  else if (data == "C1"){ dispence(2, 0); } 
+  else if (data == "C2"){ dispence(2, 1); } 
+  else if (data == "C3"){ dispence(2, 2); dispence(2, 3); }
   else if (data == "C4"){ dispence(2, 4); } 
   else if (data == "C5"){ dispence(2, 5); } 
-  else if (data == "D1"){ dispence(3, 0); } 
-  else if (data == "D2"){ dispence(3, 1); } 
-  else if (data == "D3"){ dispence(3, 2); dispence(3, 3); }
-  else if (data == "D4"){ dispence(3, 4); } 
-  else if (data == "D5"){ dispence(3, 5); } 
-  else if (data == "E1"){ dispence(5, 0); dispence(5, 1);} 
-  else if (data == "E2"){ dispence(5, 2); dispence(5, 3); } 
-  else if (data == "E3"){ dispence(5, 4); } 
-  else if (data == "E4"){ dispence(5, 5); }
+  else if (data == "D1"){ dispence(3, 0); dispence(3, 1); } 
+  else if (data == "D2"){ dispence(3, 2); dispence(3, 3); } 
+  else if (data == "D3"){ dispence(3, 4); }
+  else if (data == "D4"){ dispence(3, 5); } 
+  else if (data == "E1"){ dispence(5, 0); } 
+  else if (data == "E2"){ dispence(5, 1); } 
+  else if (data == "E3"){ dispence(5, 2); } 
+  else if (data == "E4"){ dispence(5, 3); }
+  else if (data == "E5"){ dispence(5, 4); }
+  else if (data == "E6"){ dispence(5, 5); }
 }
 
 void processData(String data){
